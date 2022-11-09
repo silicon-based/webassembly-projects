@@ -1,34 +1,38 @@
 import * as wasm from "snake-game";
 
-const canvas = <HTMLCanvasElement>document.getElementById("arena");
-const highestScoreSpan = document.getElementById("highest-score");
-const nowScoreSpan = document.getElementById("now-score");
-const context = canvas.getContext("2d");
-const game = wasm.Game.new(24);
-const cellSize = 30.0;
+const CANVAS = <HTMLCanvasElement>document.getElementById("arena");
+const HIGHESTSCORESPAN = document.getElementById("score-number-highest");
+const CURRENTSCORESPAN = document.getElementById("score-number-current");
+const CONTEXT = CANVAS.getContext("2d");
+const GAME = wasm.Game.new(24);
+const CELLSIZE = 30.0;
 
 var drawSnakeOverload: NodeJS.Timeout[];
 
 document.addEventListener("keydown", e => {
-  game.handle_keystroke(e);
+  GAME.handle_keystroke(e);
 });
 
 
-function redrawSnake(head: wasm.Cell, headDir: wasm.Direction, tail: wasm.Cell, tailDir: number, cellSize: number) {
+function redrawSnake() {
   let overloads = [];
   // Create a draw task for each pixel
   // * setTimeOut and setInterval does not block the thread *
-  for (let l = 0; l <= cellSize; l++) {
-    let overload = drawWrapper(head, headDir, tail, tailDir, cellSize, l);
+  for (let l = 0; l <= CELLSIZE; l++) {
+    let overload = drawWrapper(l);
     overloads.push(overload);
   }
   return overloads;
 }
 
 
-function drawWrapper(head: wasm.Cell, headDir: wasm.Direction, tail: wasm.Cell, tailDir: number, cellSize: number, l: number) {
+function drawWrapper(l: number) {
+  let head = GAME.head_position();
+  let tail = GAME.tail_position();
+  let headDir = GAME.direction();
+  let tailDir = GAME.tail_direction();
   let x = setTimeout(function() {
-    wasm.draw(context, head, headDir, tail, tailDir, cellSize, l)
+    wasm.draw(CONTEXT, head, headDir, tail, tailDir, CELLSIZE, l)
   }, l * 4);// wait for l * 4 ms so they can draw sequentially
   return x;
 }
@@ -39,29 +43,26 @@ function run() {
   setInterval(
     () => {
       // If game cannot continue, call initialize functions end continue to next loop
-      if (game.update_and_check_continue() == false) {
+      if (GAME.update_and_check_continue() == false) {
         drawSnakeOverload.forEach((x) => { clearTimeout(x) }); // terminate all pending drawings
-        game.initialize();
-        context.clearRect(0, 0, canvas.height, canvas.width);
-        wasm.draw_init(game, cellSize, context);
-        nowScoreSpan.innerHTML = "0";
+        GAME.initialize();
+        CONTEXT.clearRect(0, 0, CANVAS.height, CANVAS.width);
+        wasm.draw_init(CONTEXT, GAME, CELLSIZE);
+        CURRENTSCORESPAN.innerHTML = "0";
         return;
       }
-      let head = game.head_position();
-      let tail = game.tail_position();
-      game.draw_apple(context, cellSize);
-      drawSnakeOverload = redrawSnake(head, game.direction(),
-        tail, game.tail_direction(), cellSize);
-      nowScoreSpan.innerHTML = game.score().toString();
-      if (+highestScoreSpan.innerHTML < game.score()) {
-        highestScoreSpan.innerHTML = game.score().toString();
+      GAME.draw_apple(CONTEXT, CELLSIZE);
+      drawSnakeOverload = redrawSnake();
+      CURRENTSCORESPAN.innerHTML = GAME.score().toString();
+      if (+HIGHESTSCORESPAN.innerHTML < GAME.score()) {
+        HIGHESTSCORESPAN.innerHTML = GAME.score().toString();
       }
-    }, 123
+    }, 125
   )
 }
 
 
 wasm.start();
-wasm.draw_init(game, cellSize, context);
+wasm.draw_init(CONTEXT, GAME, CELLSIZE);
 run();
 

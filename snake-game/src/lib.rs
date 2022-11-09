@@ -6,6 +6,10 @@ use rand::Rng;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, KeyboardEvent};
 
+const APPLE_COLOR: &str = "#FFD700";
+const SNAKE_COLOR: &str = "#2596be";
+const DARK_CELL_COLOR: &str = "#18212f";
+const LIGHT_CELL_COLOR: &str = "#1e293b";
 
 // use wee_alloc as the global memory allocator
 #[global_allocator]
@@ -21,7 +25,7 @@ pub fn start() {
 
 #[wasm_bindgen]
 pub struct Game {
-    width: usize, // width of the canvas(cells)
+    width: usize, // width of the canvas(in cells)
     snake: Snake,
     movements: VecDeque<Direction>, // user's commands
     direction: Direction, // current direction
@@ -61,8 +65,7 @@ impl Game {
     }
 
     pub fn tail_position(&self) -> Cell {
-        let len = self.snake().cells().len();
-        self.snake().cells()[len - 1]
+        self.snake().cells().iter().last().unwrap().to_owned()
     }
 
     pub fn direction(&self) -> Direction {
@@ -89,8 +92,8 @@ impl Game {
         let mut rng =  rand::thread_rng();
         let apple = loop {
             let apple = Cell(
-                rng.gen_range(0..=width - 1),
-                rng.gen_range(0..=width - 1),
+                rng.gen_range(0..width),
+                rng.gen_range(0..width),
             );
             if !snake.cells().contains(&apple) {
                 break apple
@@ -109,16 +112,7 @@ impl Game {
             width / 2,
         );
         let snake = Snake::new(snake_tail.0, snake_tail.1, direction);
-        let mut rng =  rand::thread_rng();
-        let apple = loop {
-            let apple = Cell(
-                rng.gen_range(0..=width - 1),
-                rng.gen_range(0..=width - 1),
-            );
-            if !snake.cells().iter().take(2).any(|x| x == &apple) {
-                break apple
-            }
-        };
+        let apple = self.new_apple();
         self.score = 0;
         self.snake = snake;
         self.movements = VecDeque::new();
@@ -136,7 +130,7 @@ impl Game {
 
         let new_head = snake[0] + self.direction;
         // If hit wall or hit body, return false
-        if !(0..width).contains(&new_head.x()) || !(0..width).contains(&new_head.y()) || snake.iter().any(|x| x == &new_head) {
+        if !(0..width).contains(&new_head.x()) || !(0..width).contains(&new_head.y()) || snake.contains(&new_head) {
             return false;
         }
 
@@ -165,15 +159,9 @@ impl Game {
         };
 
         // Ignore the move if it is redundant or illegal(opposite to current direction)
-        if self.movements().is_empty(){
-            if movement != self.direction && !movement.is_opposite_to(&self.direction()) {
-                self.movements_mut().push_back(movement);
-            }
-        } else {
-            let last_movement = self.movements()[self.movements().len() - 1];
-            if movement != last_movement && !movement.is_opposite_to(&last_movement) {
-                self.movements_mut().push_back(movement);
-            }
+        let previous_movement: Direction = *self.movements().iter().last().unwrap_or(&self.direction());
+        if movement != previous_movement && !movement.is_opposite_to(&previous_movement) {
+            self.movements_mut().push_back(movement);
         }
     }
 
@@ -182,10 +170,10 @@ impl Game {
         let snake = self.snake.cells();
         loop {
             let apple = Cell(
-                rng.gen_range(0..=self.width() - 1) as i16,
-                rng.gen_range(0..=self.width() - 1) as i16,
+                rng.gen_range(0..self.width()) as i16,
+                rng.gen_range(0..self.width()) as i16,
             );
-            if !snake.iter().take(snake.len()).any(|x| x == &apple) {
+            if !snake.contains(&apple) {
                 break apple
             }
         }
@@ -277,20 +265,6 @@ pub enum Direction {
     Right,
 }
 
-// For easy generation of random direction
-impl From<u8> for Direction {
-    fn from(d: u8) -> Self {
-        assert!(d < 4);
-        match d {
-            0 => Direction::Up,
-            1 => Direction::Right,
-            2 => Direction::Down,
-            3 => Direction::Left,
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl Direction {
     fn is_opposite_to(&self, rhs: &Direction) -> bool {
         matches!((self, rhs),
@@ -304,81 +278,76 @@ impl Direction {
 
 
 #[wasm_bindgen]
-// Drawing part the head and the tail
-// This function will be called multiple times with increasing `l` to acheive smooth transition
-pub fn draw(context: &CanvasRenderingContext2d, head: &Cell, head_dir: Direction, tail: &Cell, tail_dir: Direction, cell_size: f64, l: usize) {
-    let l = l as f64;
+// Drawing part of the head and the tail
+// This function will be called multiple times with increasing `l` to achieve smooth transition
+pub fn draw(context: &CanvasRenderingContext2d, head: &Cell, head_dir: Direction, tail: &Cell, tail_dir: Direction, cell_size: f64, l: f64) {
     let (head_x, head_y): (f64, f64) = (head.x() as f64 * cell_size, head.y() as f64 * cell_size);
     let (tail_x, tail_y): (f64, f64) = (tail.x() as f64 * cell_size, tail.y() as f64 * cell_size);
 
-    // Drawing the head
-    context.set_fill_style(&"#2596be".into());
-    match head_dir {
-        Direction::Up  => context.fill_rect(head_x, head_y + cell_size - l, cell_size, l),
-        Direction::Right  => context.fill_rect(head_x, head_y, l, cell_size),
-        Direction::Down  => context.fill_rect(head_x, head_y, cell_size, l),
-        Direction::Left  => context.fill_rect(head_x + cell_size - l, head_y, l, cell_size),
+    // Draw the cell based on the direction
+    let draw_cell = |dir, x, y| {
+        match dir {
+            Direction::Up  => context.fill_rect(x, y + cell_size - l, cell_size, l),
+            Direction::Right  => context.fill_rect(x, y, l, cell_size),
+            Direction::Down  => context.fill_rect(x, y, cell_size, l),
+            Direction::Left  => context.fill_rect(x + cell_size - l, y, l, cell_size),
+        };
     };
 
-    // Calculate the background colour of the cell
-    let  box_color = match (tail_x as usize / cell_size as usize + tail_y as usize / cell_size as usize) % 2 {
-        1 => "#18212f",
-        _ => "#1e293b",
-    };
+    // Drawing the head
+    context.set_fill_style(&"#2596be".into());
+    draw_cell(head_dir, head_x, head_y);
+
     // Opposite to the head where the portion of snake body in the cell increases
     // We fill the cell with snake body first, and add background colour too acheive the effect of
     // snake leaving the cell
     context.fill_rect(tail_x, tail_y, cell_size, cell_size);
 
+    // Calculate the background colour of the cell
+    let  box_color = match (tail_x as usize / cell_size as usize + tail_y as usize / cell_size as usize) % 2 {
+        1 => DARK_CELL_COLOR,
+        _ => LIGHT_CELL_COLOR,
+    };
+
     context.set_fill_style(&box_color.into());
-    match tail_dir {
-        Direction::Up  => context.fill_rect(tail_x, tail_y + cell_size - l, cell_size, l),
-        Direction::Right  => context.fill_rect(tail_x, tail_y, l, cell_size),
-        Direction::Down  => context.fill_rect(tail_x, tail_y, cell_size, l),
-        Direction::Left  => context.fill_rect(tail_x + cell_size - l, tail_y, l, cell_size),
-    }
+    draw_cell(tail_dir, tail_x, tail_y);
 }
 
 
 #[wasm_bindgen]
-pub fn draw_init(game: &Game, cell_size: f64, context: &CanvasRenderingContext2d) {
-
-    let dark_cell_color = "#18212f".into();
-    let light_cell_color = "#1e293b".into();
-
+pub fn draw_init(context: &CanvasRenderingContext2d, game: &Game, cell_size: f64) {
     context.begin_path();
     for i in 0..game.width() {
         for j in 0..game.width() {
-            context.set_fill_style(match (i + j) % 2 {
-                1 => &dark_cell_color,
-                _ => &light_cell_color
-            });
+            let color = match (i + j) % 2 {
+                1 => DARK_CELL_COLOR,
+                _ => LIGHT_CELL_COLOR
+            };
+            context.set_fill_style(&color.into());
             context.fill_rect(
                 cell_size * i as f64 + 1.0,
                 cell_size * j as f64 + 1.0,
-                cell_size as f64,
-                cell_size as f64,
+                cell_size,
+                cell_size,
             );
         }
     }
-    let snake_color = "#2596be".into();
-    context.set_fill_style(&snake_color);
+    context.set_fill_style(&SNAKE_COLOR.into());
     let body = game.snake().cells();
     for Cell(x, y) in body.iter().take(body.len() - 1) {
         context.fill_rect(
             cell_size * *x as f64,
             cell_size * *y as f64,
-            cell_size as f64,
-            cell_size as f64,
+            cell_size,
+            cell_size,
         )
     }
-    let apple_color = "#FFD700".into();
-    context.set_fill_style(&apple_color);
+    context.set_fill_style(&APPLE_COLOR.into());
     context.fill_rect(
         cell_size * game.apple().x() as f64,
         cell_size * game.apple().y() as f64,
-        cell_size as f64,
-        cell_size as f64,
+        cell_size,
+        cell_size,
     )
 }
 

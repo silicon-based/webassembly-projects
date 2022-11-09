@@ -1,0 +1,24 @@
+[package]
+name = "snake-game"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "a snake game"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+development = ["console_error_panic_hook"]
+
+[dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8.5"
+wasm-bindgen.workspace = true
+wee_alloc.workspace = true
+console_error_panic_hook = { workspace = true, optional = true }
+web-sys = { workspace = true, features = ['CanvasRenderingContext2d', 'KeyboardEvent'] }
+
+[dev-dependencies]
+wasm-bindgen-test.workspace = true
+

@@ -1,12 +1,12 @@
 [workspace]
 
-members = ["snake-game"]
+members = ["snake-game", "sudoku-solver"]
 
 [workspace.package]
 authors = ["JamesNg <jamesng@linuxmail.org>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "a snake game"
+description = "webassembly projects"
 
 
 [profile.release]
@@ -17,17 +17,17 @@ opt-level = 3
 strip = true
 
 [workspace.dependencies]
-wasm-bindgen = "0.2.63"
+wasm-bindgen = "0.2"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
-console_error_panic_hook = { version = "0.1.6" }
+console_error_panic_hook = { version = "0.1" }
 
 # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # compared to the default allocator's ~10K. It is slower than the default
 # allocator, however.
-wee_alloc = { version = "0.4.5"}
-web-sys = { version = "0.3.4" }
-wasm-bindgen-test = "0.3.13"
+wee_alloc = { version = "0.4"}
+web-sys = { version = "0.3" }
+wasm-bindgen-test = "0.3"

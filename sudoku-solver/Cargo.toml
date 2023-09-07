@@ -1,0 +1,25 @@
+[package]
+name = "sudoku-solver"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "a sudoku solver"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+development = ["console_error_panic_hook"]
+
+[dependencies]
+getrandom = { version = "*", features = ["js"] }
+rand = "*"
+js-sys = "0.3"
+wasm-bindgen.workspace = true
+wee_alloc.workspace = true
+console_error_panic_hook = { workspace = true, optional = true }
+web-sys = { workspace = true, features = ['CanvasRenderingContext2d', 'KeyboardEvent'] }
+
+[dev-dependencies]
+wasm-bindgen-test.workspace = true
+

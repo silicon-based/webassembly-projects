@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href='https://fonts.googleapis.com/css?family=Fira Sans' rel='stylesheet'>
+    <title>Sudoku Solver</title>
+    <style>
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Fira Sans, sans-serif;
+            background: radial-gradient(circle, #fafafa, #c2c2c2);
+        }
+        h1 {
+            padding-left: 1em;
+            color: #333;
+            text-shadow: 2px 2px 2px #aaa;
+        }
+        .container {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            display: inline-flex;
+            justify-content: space-between;
+            padding: 3em 5em;
+            align-items: center;
+        }
+        .container > button {
+            margin-top: 150px;
+            margin-bottom: 150px;
+            width: 200px;
+            height: 45px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        .container > button:hover {
+            background-color: #0056b3;
+        }
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 0px;
+            width: 450px;
+            height: 450px;
+            border: 2px solid black;
+            background-color: white;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.3);
+        }
+        .cell {
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            position:relative;
+            width:50px;
+            height:50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            font-size: 1.8rem;
+            font-weight: 500;
+            background-color: #fff;
+        }
+        .cell:nth-child(3n) {
+            border-right: 2px solid black;
+        }
+        .cell-border-bottom {
+            border-bottom: 2px solid black;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            border: none;
+            outline: none;
+            font-size: 2rem;
+            text-align: center;
+            color: #333;
+        }
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        hr {
+            border: 1px solid #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sudoku Solver</h1>
+    <hr>
+    <div class="container">
+        <div class="grid-container">
+            <h3>Input</h3>
+            <div class="sudoku-grid" id="input-grid"></div>
+        </div>
+        <button id="solve-button">Solve</button>
+        <div class="grid-container">
+            <h3>Solution</h3>
+            <div class="sudoku-grid" id="solution-grid"></div>
+        </div>
+    </div>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <script src="./bootstrap.js"></script> 
+</body>
+</html>
